@@ -1,0 +1,6 @@
+langchain_community
+langchain_text_splitters
+pypdf
+python-docx
+langchain-chroma
+sentence-transformers

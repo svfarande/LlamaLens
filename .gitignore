@@ -1,0 +1,4 @@
+**/qp_bot_venv
+**/chromadb_dir
+**/.ipynb_checkpoints
+.DS_store
