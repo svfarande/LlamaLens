@@ -4,3 +4,6 @@ pypdf
 python-docx
 langchain-chroma
 sentence-transformers
+fastapi
+uvicorn
+python-multipart

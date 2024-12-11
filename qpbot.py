@@ -1,4 +1,4 @@
-import os, shutil # for file paths and db dir
+import os # for file paths and db dir
 from langchain_community.document_loaders import PyPDFLoader # for PDFs
 from docx import Document # for doc or docx 
 from langchain_text_splitters import RecursiveCharacterTextSplitter # to create chunks
@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore")
 text_splitter = RecursiveCharacterTextSplitter(chunk_size = 1000, chunk_overlap = 300)
 embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2") #, show_progress=True)
 OLLAMA_API_URL = "http://localhost:11434/api/chat"
+chromadb_dir = os.path.join(os.getcwd(), "chromadb_dir")
 
 def setup_logging(log_level):
     """
@@ -34,7 +35,7 @@ def check_if_file_is_valid(file_path, file_extension):
     else :
         raise Exception("Either file don't exist or is not supported - give full file path for your document (as of now supported - csv, pdf, doc or docx).")
 
-def process_pdf_and_store_in_vector_db(file_path, chromadb_dir):
+def process_pdf_and_store_in_vector_db(file_path):
     loaded_pdf = PyPDFLoader(file_path).load()
     splitted_text = text_splitter.split_documents(loaded_pdf)
     
@@ -42,7 +43,7 @@ def process_pdf_and_store_in_vector_db(file_path, chromadb_dir):
     
     logging.debug(f"{db._collection.count()} {len(splitted_text)}")
 
-def process_docx_and_store_in_vector_db(file_path, chromadb_dir):
+def process_docx_and_store_in_vector_db(file_path):
     docx = Document(file_path)
     docx_text = "\n".join([p.text for p in docx.paragraphs])
     splitted_text = text_splitter.split_text(docx_text)
@@ -51,7 +52,7 @@ def process_docx_and_store_in_vector_db(file_path, chromadb_dir):
     
     logging.debug(f"{db._collection.count()} {len(splitted_text)}")
 
-def query_db_and_get_context(question, chromadb_dir):
+def query_db_and_get_context(question):
     if os.path.exists(chromadb_dir):
         db = Chroma(persist_directory=chromadb_dir, embedding_function=embedding_function)
         results = db.similarity_search_with_relevance_scores(query=question, k=3)
@@ -107,30 +108,74 @@ def send_prompt_to_llama(prompt, model="llama3.2:latest"):
         return response_data["message"].get("content", "No response from model.")
     else:
         raise Exception(f"Error {response.status_code}: {response.text}")
+    
+def reset_model_context(model="llama3.2:latest"):
+    """
+    Reset the conversation context of the Ollama LLaMA model.
+    """
+    payload = {
+        "model": model,
+        "messages": [{"role": "system", "content": "Resetting the context or conversation. Start fresh."}],
+         "stream": False
+    }
+    try:
+        response = requests.post(OLLAMA_API_URL, json=payload)
+        if response.status_code == 200:
+            logging.debug("Model context reset successfully.")
+        else:
+            logging.debug(f"Failed to reset model context: {response.status_code}")
+    except Exception as e:
+        logging.debug(f"Error resetting model context: {e}")
 
 def main():
     file_path = os.path.abspath(input("Enter full file path for your document (as of now supported - pdf or docx) : "))
     file_name, file_extension = os.path.splitext(file_path)
     check_if_file_is_valid(file_path, file_extension)
 
-    chromadb_dir = os.path.join(os.getcwd(), "chromadb_dir")
     if file_extension.lower() == '.pdf':
-        process_pdf_and_store_in_vector_db(file_path, chromadb_dir)
+        process_pdf_and_store_in_vector_db(file_path)
     elif file_extension.lower() == '.docx':
-        process_docx_and_store_in_vector_db(file_path, chromadb_dir)
+        process_docx_and_store_in_vector_db(file_path)
+
+    reset_model_context()
 
     question = ""
     while question.lower() != "bye":
         question = input("\n Enter your question. Enter bye to stop this bot. Your Question : ")
         if question.lower() == "bye":
             return
-        context = query_db_and_get_context(question, chromadb_dir)
+        context = query_db_and_get_context(question)
         if context != "I don't know the answer.":
             prompt = create_prompt(question, context)
             answer = send_prompt_to_llama(prompt)
             print(answer)
         else:
             print(context)
+
+def app_main(file_path):
+    file_name, file_extension = os.path.splitext(file_path)
+    check_if_file_is_valid(file_path, file_extension)
+
+    if file_extension.lower() == '.pdf':
+        process_pdf_and_store_in_vector_db(file_path)
+        reset_model_context()
+        return True
+    elif file_extension.lower() == '.docx':
+        process_docx_and_store_in_vector_db(file_path)
+        reset_model_context()
+        return True
+
+    return False
+
+def app_get_ans(question):
+    context = query_db_and_get_context(question)
+    if context != "I don't know the answer.":
+        prompt = create_prompt(question, context)
+        answer = send_prompt_to_llama(prompt)
+        return answer
+    else:
+        return context
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A RAG ChatBot.")
@@ -147,7 +192,3 @@ if __name__ == "__main__":
 
     main()
     
-    
-    
-    
-        

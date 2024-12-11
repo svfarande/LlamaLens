@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chatbot</title>
+    <style>
+        #response {
+            margin-top: 20px;
+            max-width: 600px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        .spinner {
+            display: none;
+            margin: 10px auto;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ccc;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            display: none;
+            text-align: center;
+            font-style: italic;
+            margin-top: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>OpenSource Llama 3.2 based RAG App</h1>
+    <p>
+        It takes doc (only .pdf & .docx docs supported as of now) & question as input and returns the answer based on context from the doc. <br>
+        If Question is irrelevant to uploaded doc it simply says "I don't know the answer". <br>
+        Refresh the page to re-upload file again or reset the session. <br>
+        <strong>The awesome part of this app is the OpenSource LLM Llama 3.2 is running locally!🔥</strong>
+    </p>
+
+    <h2>Upload a Document</h2>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" name="file" accept=".pdf, .docx" required>
+        <button type="submit">Upload</button>
+    </form>
+    <div class="spinner" id="uploadSpinner"></div>
+    <div class="loading-text" id="uploadLoadingText">Processing your document...</div>
+
+    <h2>Ask a Question</h2>
+    <form id="queryForm">
+        <textarea id="queryInput" placeholder="Enter your question" rows="4" cols="50" required></textarea>
+        <button type="submit">Ask</button>
+    </form>
+    <div class="spinner" id="querySpinner"></div>
+    <div class="loading-text" id="queryLoadingText">Thinking...</div>
+
+    <h3>Response:</h3>
+    <div id="response"></div>
+
+    <script>
+        const uploadForm = document.getElementById("uploadForm");
+        const queryForm = document.getElementById("queryForm");
+        const responseDiv = document.getElementById("response");
+
+        const uploadSpinner = document.getElementById("uploadSpinner");
+        const uploadLoadingText = document.getElementById("uploadLoadingText");
+
+        const querySpinner = document.getElementById("querySpinner");
+        const queryLoadingText = document.getElementById("queryLoadingText");
+
+        let sessionId = null;
+
+        // Handle file upload
+        uploadForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            // Show loading spinner
+            uploadSpinner.style.display = "block";
+            uploadLoadingText.style.display = "block";
+
+            const fileInput = document.getElementById("fileInput").files[0];
+            const formData = new FormData();
+            formData.append("file", fileInput);
+
+            try {
+                const res = await fetch("http://127.0.0.1:8000/upload/", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await res.json();
+                sessionId = data.session_id;
+
+                // Get the current timestamp
+                const timestamp = new Intl.DateTimeFormat("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                }).format(new Date());;
+
+                // Display the document processed message with timestamp
+                const uploadHtml = `
+                    <div style="border-bottom: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+                        <p><strong>${timestamp}</strong></p>
+                        <p>${data.message}</p>
+                    </div>
+                `;
+
+                responseDiv.innerHTML = uploadHtml + responseDiv.innerHTML;
+            } catch (error) {
+                responseDiv.innerHTML = "Error uploading file: " + error.message;
+            } finally {
+                // Hide loading spinner
+                uploadSpinner.style.display = "none";
+                uploadLoadingText.style.display = "none";
+            }
+        });
+
+        // Handle query submission
+        queryForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const question = document.getElementById("queryInput").value;
+
+            if (!sessionId) {
+                responseDiv.innerHTML = "<p>Please upload a document first.</p>";
+                return;
+            }
+
+            // Show loading spinner
+            querySpinner.style.display = "block";
+            queryLoadingText.style.display = "block";
+
+            try {
+                const res = await fetch("http://127.0.0.1:8000/query/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        question: question,
+                    }),
+                });
+
+                const data = await res.json();
+
+                // Get the current timestamp
+                const timestamp = new Intl.DateTimeFormat("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                }).format(new Date());
+                // Render new response with timestamp
+                const responseHtml = `
+                    <div style="border-bottom: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+                        <p><strong>${timestamp}</strong></p>
+                        <p><strong>Q:</strong> ${question}</p>
+                        <p><strong>A:</strong> ${data.message.replace(/\n/g, "<br>")}</p>
+                    </div>
+                `;
+
+                // Prepend response (latest at top)
+                responseDiv.innerHTML = responseHtml + responseDiv.innerHTML;
+
+                document.getElementById("queryInput").value = "";
+
+            } catch (error) {
+                responseDiv.innerHTML = `<p>Error fetching query: ${error.message}</p>` + responseDiv.innerHTML;
+            } finally {
+                // Hide loading spinner
+                querySpinner.style.display = "none";
+                queryLoadingText.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
