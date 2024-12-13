@@ -17,7 +17,7 @@ To bring the chatbot use case to production, we need a robust, scalable, and aut
 
 **Pipeline Architecture Components :**  
 
-![image](/diagrams/qpbot_pipeline_architecture_components.drawio.png)
+![image](/diagrams/llamalense_pipeline_architecture_components.drawio.png)
 
 In detail explanation for above component diagram:
 

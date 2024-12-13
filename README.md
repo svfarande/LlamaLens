@@ -1,6 +1,6 @@
-# QuestionsPro Bot 
+# LlamaLense 🔍🦙
 
-This is OpenSoure Llama 3.2 RAG app or Chat Bot who answers the questions based on context. **The awesome part of this application is the LLM runs locally!** 🔥  
+LlamaLense 🔍🦙 is OpenSoure Llama 3.2 RAG app or Chat Bot who answers the questions based on context. **The awesome part of this application is the LLM runs locally!** 🔥  
 It takes doc and question as input and returns the answer based on context from the doc. If Question is irrelevant to doc it simply says  "I don't know the answer".
 
 ## Pre-requisites & Setup:
@@ -16,36 +16,40 @@ It takes doc and question as input and returns the answer based on context from 
 
 **Setup instructions :**
 - Clone this repository.
-- `cd qp-ai-assessment`.
-- Create venv : `python3 -m venv qp_bot_venv`.
-- Activate venv : `source qp_bot_venv/bin/activate`.
+- `cd llamalens`.
+- Create venv : `python3 -m venv ll_venv`.
+- Activate venv : `source ll_venv/bin/activate`.
 - Install `requirement.txt` : `pip3 install -r requirements.txt`.
 - To Run in **Terminal** :
-    - Run `qpbot.py` file in venv : `~/qp-ai-assessment/qp_bot_venv/bin/python ~/qp-ai-assessment/qpbot.py`.
+    - Run `llamalense.py` file in venv : `~/llamalens/ll_venv/bin/python ~/llamalens/llamalense.py`.
     - User `--log_level DEBUG` option incase you want all outputs.
 - To Run using **UI** :
     - Start backend : `python3 -m uvicorn backend.api:app --reload`.
-    - Launch frontend : open `~/qp-ai-assessment/frontend/index.html` locally in your browser. 
-    - Make sure backend is running on `http://127.0.0.1:8000` or change in `~/qp-ai-assessment/frontend/index.html` if different.
+    - Launch frontend : open `~/llamalens/frontend/index.html` locally in your browser. 
+    - Make sure backend is running on `http://127.0.0.1:8000` or change in `~/llamalens/frontend/index.html` if different.
 
 
-## Docs :
+## Docs :  
 - [End-To-End MLOps Pipeline](/docs/End-To-End%20MLOps%20Pipeline.md)
 - [Performance Evaluation Methods](/docs/Performance%20Evaluation%20Methods.md)
 - [Pipeline Management](/docs/Pipeline%20Management.md)
 
 ## Terminal Run Outputs (Without UI) :
-**DOCX :**
-![image](/outputs/terminal_run/docx%20output.png)
+**DOCX :**  
 
-**PDF :**
-![image](/outputs/terminal_run/pdf%20output.png)
+![image](/outputs/terminal_run/docx-output.png)
+
+**PDF :**  
+
+![image](/outputs/terminal_run/pdf-output.png)
 
 ## UI Output :
-**DOCX :**
+**DOCX :**  
+
 ![image](/outputs/ui_run/docx-output.png)
 
 
-**PDF :**
+**PDF :**  
+
 ![image](/outputs/ui_run/pdf-output.png)
 

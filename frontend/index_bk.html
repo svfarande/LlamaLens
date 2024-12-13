@@ -5,18 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LlamaLense 🔍🦙</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            color: #121212;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .dark-theme {
-            background-color: #121212;
-            color: #ffffff;
-        }
-
         #response {
             margin-top: 20px;
             max-width: 600px;
@@ -24,11 +12,6 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             background: #f9f9f9;
-        }
-
-        .dark-theme #response {
-            background: #1e1e1e;
-            border-color: #444;
         }
 
         .spinner {
@@ -62,7 +45,6 @@
 </head>
 <body>
     <h1>LlamaLense 🔍🦙</h1>
-    <button id="themeToggle">Toggle Dark/Light Theme</button>
     <p>
         LlamaLense 🔍🦙 is OpenSoure Llama 3.2 RAG app or Chat Bot. <br>
         It takes doc (only .pdf & .docx docs supported as of now) & question as input and returns the answer based on context from the doc. <br>
@@ -101,10 +83,9 @@
         const querySpinner = document.getElementById("querySpinner");
         const queryLoadingText = document.getElementById("queryLoadingText");
 
-        const fileInput = document.getElementById("fileInput");
         let sessionId = null;
 
-        //Handle file upload
+        // Handle file upload
         uploadForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
@@ -112,9 +93,9 @@
             uploadSpinner.style.display = "block";
             uploadLoadingText.style.display = "block";
 
-            const file = fileInput.files[0];
+            const fileInput = document.getElementById("fileInput").files[0];
             const formData = new FormData();
-            formData.append("file", file);
+            formData.append("file", fileInput);
 
             try {
                 const res = await fetch("http://127.0.0.1:8000/upload/", {
@@ -124,9 +105,6 @@
 
                 const data = await res.json();
                 sessionId = data.session_id;
-
-                // Clear file input (removes document name)
-                fileInput.value = "";
 
                 // Get the current timestamp
                 const timestamp = new Intl.DateTimeFormat("en-US", {
@@ -139,11 +117,11 @@
                     hour12: true,
                 }).format(new Date());;
 
-                // Display the document processed message with document name
+                // Display the document processed message with timestamp
                 const uploadHtml = `
                     <div style="border-bottom: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
                         <p><strong>${timestamp}</strong></p>
-                        <p>Document "${file.name}" processed. You can start asking questions.</p>
+                        <p>${data.message}</p>
                     </div>
                 `;
 
@@ -164,7 +142,7 @@
             const question = document.getElementById("queryInput").value;
 
             if (!sessionId) {
-                responseDiv.innerHTML = `<p style="color: red;">Invalid session. Please upload a document first.</p>`;
+                responseDiv.innerHTML = "<p>Please upload a document first.</p>";
                 return;
             }
 
@@ -186,10 +164,6 @@
 
                 const data = await res.json();
 
-                if (!data.message) {
-                    throw new Error("Invalid session.");
-                }
-
                 // Get the current timestamp
                 const timestamp = new Intl.DateTimeFormat("en-US", {
                     year: "numeric",
@@ -200,7 +174,7 @@
                     second: "2-digit",
                     hour12: true,
                 }).format(new Date());
-
+                
                 // Render new response with timestamp
                 const responseHtml = `
                     <div style="border-bottom: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
@@ -214,19 +188,14 @@
                 responseDiv.innerHTML = responseHtml + responseDiv.innerHTML;
 
                 document.getElementById("queryInput").value = "";
+
             } catch (error) {
-                responseDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>` + responseDiv.innerHTML;
+                responseDiv.innerHTML = `<p>Error fetching query: ${error.message}</p>` + responseDiv.innerHTML;
             } finally {
                 // Hide loading spinner
                 querySpinner.style.display = "none";
                 queryLoadingText.style.display = "none";
             }
-        });
-
-        // Toggle dark/light theme
-        const themeToggle = document.getElementById("themeToggle");
-        themeToggle.addEventListener("click", () => {
-            document.body.classList.toggle("dark-theme");
         });
     </script>
 </body>

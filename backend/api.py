@@ -1,7 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import os
-import qpbot
+import llamalense
 import logging
 
 logger = logging.getLogger("uvicorn")
@@ -42,7 +42,7 @@ async def upload_file(file: UploadFile = File(...)):
     session_id = len(SESSIONS) + 1
     SESSIONS[session_id] = {"document_path": file_path, "conversation": []}
 
-    if qpbot.app_main(file_path=file_path):
+    if llamalense.app_main(file_path=file_path):
         return {"session_id": session_id, "message": "Document processed. You can start asking questions."}
     return {"session_id": session_id, "message": "Something went wrong!"}
 
@@ -63,7 +63,7 @@ async def chat(request: Request):
             return {"message": "Session reset. Please upload a new document to start over."}
 
         # Simulate chatbot response
-        response = qpbot.app_get_ans(question)
+        response = llamalense.app_get_ans(question)
         session_data = SESSIONS[session_id]
         session_data["conversation"].append({"user": question, "bot": response})
 

@@ -7,4 +7,4 @@
 4. Model Training and Versioning
 5. Deployment Pipeline
 
-![image](/diagrams/qpbot_end_to_end_MLOps_pipeline.drawio.png)
+![image](/diagrams/llamalense_end_to_end_MLOps_pipeline.drawio.png)
